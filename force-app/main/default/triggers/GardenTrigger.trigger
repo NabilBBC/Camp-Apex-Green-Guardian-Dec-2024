@@ -1,3 +1,16 @@
-trigger GardenTrigger on CAMPX__Garden__c (before insert) {
-    GardenTriggerHandler.InitializeGardenFieldsUponCreation(trigger.new);
+trigger GardenTrigger on CAMPX__Garden__c (before insert, after insert, before update) {
+
+    if (trigger.isBefore && trigger.isInsert) {
+        GardenTriggerHandler.initializeGardenFieldsUponCreation(trigger.new);
+    }
+    
+    if (trigger.isBefore && trigger.isUpdate) {
+        GardenTriggerHandler.createTaskUponGardenUpdate(trigger.new, trigger.oldmap);
+        GardenTriggerHandler.transferOpenTasksBetweenManagers(trigger.new, trigger.oldmap);
+    }
+
+    if (trigger.isAfter && trigger.isInsert) {
+        GardenTriggerHandler.createTaskUponGardenCreation(trigger.new);
+    }
+
 }

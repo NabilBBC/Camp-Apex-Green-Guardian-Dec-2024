@@ -3,7 +3,7 @@
 private class PlantTriggerHandlerTest {
 
     @isTest
-    static void InitializePlantFields() {
+    static void initializePlantFields() {
         CAMPX__Plant__c newPlant = new CAMPX__Plant__c(Name = 'FirstPlant');
         insert newPlant;
 
@@ -21,7 +21,7 @@ private class PlantTriggerHandlerTest {
     }
 
     @isTest
-    static void InitializePlantFieldsWithGardenAndExposure() {
+    static void initializePlantFieldsWithGardenAndExposure() {
         
         CAMPX__Garden__c BigGarden = new CAMPX__Garden__c(Name = 'Big Garden', CAMPX__Sun_Exposure__c = 'Full Shade');
         insert BigGarden;

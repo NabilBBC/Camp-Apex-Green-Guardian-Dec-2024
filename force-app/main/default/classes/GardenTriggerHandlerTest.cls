@@ -38,4 +38,56 @@ private class GardenTriggerHandlerTest {
         Assert.areEqual(0, insertedGarden.CAMPX__Total_Plant_Count__c);
         Assert.areEqual(0, insertedGarden.CAMPX__Total_Unhealthy_Plant_Count__c);
     }
+
+    @isTest
+    private static void CreateNewTaskUponGardenCreation() {
+        List<User> listOfManagers = [SELECT id, name, firstName, lastName, userName FROM User];
+        CAMPX__Garden__c newGardenWhithManager = new CAMPX__Garden__c(Name = 'New Garden', CAMPX__Manager__c = listOfManagers.get(0).id);
+        insert newGardenWhithManager;
+        List <Task> taskId = [SELECT id, subject FROM Task WHERE OwnerId = :listOfManagers.get(0).Id];
+        Assert.areEqual(1, taskId.size());
+        Assert.areEqual('Acquire Plants', taskId.get(0).Subject);
+
+    }
+
+    @istest
+    private static void createTaskUponGardenUpdateAddManager() {
+        List<User> listOfManagers = [SELECT id, name, firstName, lastName, userName FROM User];
+        CAMPX__Garden__c newGardenWhithoutManager = new CAMPX__Garden__c(Name = 'New Garden');
+        insert newGardenWhithoutManager;
+        Assert.areEqual(null, newGardenWhithoutManager.CAMPX__Manager__c);
+        newGardenWhithoutManager.CAMPX__Manager__c = listOfManagers.get(0).id;
+        update newGardenWhithoutManager;
+        List <Task> taskId = [SELECT id, subject FROM Task WHERE OwnerId = :listOfManagers.get(0).Id];
+        Assert.areEqual(1, taskId.size());
+        Assert.areEqual('Acquire Plants', taskId.get(0).Subject);
+    }
+
+    @istest
+    private static void createTaskUponGardenUpdateChangeManager() {
+        List<User> listOfManagers = [SELECT id, name, firstName, lastName, userName FROM User];
+        CAMPX__Garden__c newGardenWhithExistingManager = new CAMPX__Garden__c(Name = 'New Garden', CAMPX__Manager__c = listOfManagers.get(0).id);
+        insert newGardenWhithExistingManager;
+        Assert.areEqual(listOfManagers.get(0).id, newGardenWhithExistingManager.CAMPX__Manager__c);
+        newGardenWhithExistingManager.CAMPX__Manager__c = listOfManagers.get(1).id;
+        update newGardenWhithExistingManager;
+        List <Task> taskId = [SELECT id, subject FROM Task];
+        Assert.areEqual(1, taskId.size());
+        Assert.areEqual('Acquire Plants', taskId.get(0).Subject);
+    }
+    
+    @istest
+    private static void transferOpenTasksToNewGardener() {
+        List<User> managers = [SELECT id, name, firstName, lastName, userName FROM User];
+        CAMPX__Garden__c gardenOne = new CAMPX__Garden__c(Name = 'Garden One', CAMPX__Manager__c = managers.get(0).id);
+        insert gardenOne;
+        List <Task> tasksOfManagerZero = [SELECT id, subject, ownerId FROM Task WHERE OwnerId = :managers.get(0).Id];
+        Assert.areEqual(1, tasksOfManagerZero.size(), 'Manager Zero should have 1 task');
+        gardenOne.CAMPX__Manager__c = managers.get(7).Id;
+        update gardenOne;
+        List <Task> tasksOfManagerSeven = [SELECT id, subject, ownerId FROM Task  WHERE OwnerId = :managers.get(7).Id];
+        Assert.areEqual( 1, tasksOfManagerSeven.size(),'Manager Seven should have 1 task');
+        tasksOfManagerZero = [SELECT id, subject, ownerId FROM Task WHERE OwnerId = :managers.get(0).Id];
+        Assert.areEqual(0, tasksOfManagerZero.size(),'Manager Zero should have 0 task');
+    }
 }
