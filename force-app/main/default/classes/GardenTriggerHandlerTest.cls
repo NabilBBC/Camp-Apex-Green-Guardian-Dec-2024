@@ -90,4 +90,41 @@ private class GardenTriggerHandlerTest {
         tasksOfManagerZero = [SELECT id, subject, ownerId FROM Task WHERE OwnerId = :managers.get(0).Id];
         Assert.areEqual(0, tasksOfManagerZero.size(),'Manager Zero should have 0 task');
     }
+
+    @istest
+    private static void deleteUncompletedTasksWithoutManager() {
+        List<User> managers = [SELECT id, name, firstName, lastName, userName FROM User];
+        CAMPX__Garden__c gardenOne = new CAMPX__Garden__c(Name = 'Garden One', CAMPX__Manager__c = managers.get(0).id);
+        insert gardenOne;
+        List <Task> tasksOfManagerZero = [SELECT id, subject, ownerId FROM Task WHERE OwnerId = :managers.get(0).Id];
+        Assert.areEqual(1, tasksOfManagerZero.size(), 'Manager Zero should have 1 task');
+        gardenOne.CAMPX__Manager__c = null;
+        update gardenOne;
+        List <Task> allTasks = [SELECT id, subject, ownerId FROM Task];
+        Assert.areEqual(0, allTasks.size(), 'There should be no existing tasks');
+    }
+
+    @istest
+    private static void fillManagerStartDate() {
+        List<User> managers = [SELECT id, name, firstName, lastName, userName FROM User];
+        CAMPX__Garden__c gardenOne = new CAMPX__Garden__c(Name = 'Garden One', CAMPX__Manager__c = managers.get(0).id);
+        insert gardenOne;
+        Date today = System.today();
+        CAMPX__Garden__c createdGarden = [SELECT id, CAMPX__Manager_Start_Date__c FROM CAMPX__Garden__c WHERE name = 'Garden One'];
+        Assert.areEqual(today, createdGarden.CAMPX__Manager_Start_Date__c, 'Manager Start Date should be today');        
+    }
+
+    @istest
+    private static void clearManagerStartDate() {
+        List<User> managers = [SELECT id, name, firstName, lastName, userName FROM User];
+        CAMPX__Garden__c gardenOne = new CAMPX__Garden__c(Name = 'Garden One', CAMPX__Manager__c = managers.get(0).id);
+        insert gardenOne;
+        Date today = System.today();
+        CAMPX__Garden__c createdGarden = [SELECT id, CAMPX__Manager_Start_Date__c FROM CAMPX__Garden__c WHERE name = 'Garden One'];
+        Assert.areEqual(today, createdGarden.CAMPX__Manager_Start_Date__c, 'Manager Start Date should be today');
+        gardenOne.CAMPX__Manager__c = null;
+        update gardenOne;
+        createdGarden  = [SELECT id, CAMPX__Manager_Start_Date__c FROM CAMPX__Garden__c WHERE name = 'Garden One'];
+        Assert.areEqual(null, gardenOne.CAMPX__Manager_Start_Date__c, 'Manager Start Date should be null');
+    }
 }

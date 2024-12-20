@@ -67,12 +67,68 @@ public with sharing class GardenTriggerHandler {
                                         AND WhatId = :garden.id
                                         AND subject = 'Acquire Plants'
                                         ];
-                    for (Task taskToUpdate : tasksToTransfer) {
-                        taskToUpdate.OwnerId = garden.CAMPX__Manager__c;
-                        tasksToUpdate.add(taskToUpdate);                   
+                    if (garden.CAMPX__Manager__c != null) {        
+                        for (Task taskToUpdate : tasksToTransfer) {
+                            taskToUpdate.OwnerId = garden.CAMPX__Manager__c;
+                            tasksToUpdate.add(taskToUpdate);                   
+                        }
                     }
                 }
             }
         } update tasksToUpdate;        
+    }
+
+    public static void deleteUncompletedTasksWithoutManager(List <CAMPX__Garden__c> newGs, Map<Id, CAMPX__Garden__c> oldgGMap) {
+        List<task> tasksUncompleted = [ SELECT subject, WhatId, ownerId, Status
+                                        FROM task
+                                        WHERE Status <> 'Completed'
+                                        AND subject = 'Acquire Plants'
+                                      ];
+        List<Task> tasksToDelete = new List<Task>();
+        for (CAMPX__Garden__c newG : newGs) {
+            CAMPX__Garden__c oldG = oldgGMap.get(newG.Id);
+            if (oldG.CAMPX__Manager__c != null) {
+                if (newG.CAMPX__Manager__c == null) {
+                    for (task taskToDelete : tasksUncompleted) {
+                        if (taskToDelete.WhatId == newG.Id) {
+                            tasksToDelete.add(taskToDelete);
+                        }
+                    }
+                }
+            }
+        } delete tasksToDelete;
+    }
+
+    public static void fillManagerStartDate(List <CAMPX__Garden__c> newGs, Map<Id, CAMPX__Garden__c> oldgGMap) {
+        for (CAMPX__Garden__c triggGarden : newGs) {
+            if (Trigger.isInsert) {
+                if (triggGarden.CAMPX__Manager__c != null) {
+                    triggGarden.CAMPX__Manager_Start_Date__c = system.today();
+                    }
+                }
+            if (Trigger.isUpdate) {
+                if (oldgGMap != null) {
+                    CAMPX__Garden__c oldGarden = oldgGMap.get(triggGarden.id);
+                    if ((oldGarden.CAMPX__Manager__c == null && triggGarden.CAMPX__Manager__c != null)
+                    || (oldGarden.CAMPX__Manager__c != null && (oldGarden.CAMPX__Manager__c <> triggGarden.CAMPX__Manager__c))) {
+                        triggGarden.CAMPX__Manager_Start_Date__c = system.today();
+                    }
+                }
+            }
+        }
+    }
+
+
+    public static void clearManagerStartDate(List <CAMPX__Garden__c> newGs, Map<Id, CAMPX__Garden__c> oldgGMap) {
+        for (CAMPX__Garden__c garden2Update : newGs) {
+            if (oldgGMap != null) {
+                CAMPX__Garden__c oldGarden = oldgGMap.get(garden2Update.id);
+                if (oldGarden.CAMPX__Manager_Start_Date__c != null) {
+                    if (garden2Update.CAMPX__Manager__c == null) {
+                        garden2Update.CAMPX__Manager_Start_Date__c = null;
+                    }
+                }
+            }
+        }
     }
 }
