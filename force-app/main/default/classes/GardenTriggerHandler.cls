@@ -131,4 +131,33 @@ public with sharing class GardenTriggerHandler {
             }
         }
     }
+
+    public static void calculateCapacityAtInsert(List <CAMPX__Garden__c> newGardens) {
+        if (!newGardens.isempty()) {
+            for (CAMPX__Garden__c garden : newGardens) {
+                if (garden.CAMPX__Total_Plant_Count__c != null && garden.CAMPX__Max_Plant_Count__c != null) {
+                    if (garden.CAMPX__Total_Plant_Count__c > 0 && garden.CAMPX__Max_Plant_Count__c > 0) {
+                        garden.CAMPX__Capacity__c = (garden.CAMPX__Total_Plant_Count__c/garden.CAMPX__Max_Plant_Count__c)*100;
+                    }
+                if (garden.CAMPX__Total_Plant_Count__c <= 0 || garden.CAMPX__Max_Plant_Count__c <= 0 || garden.CAMPX__Total_Plant_Count__c == null || garden.CAMPX__Max_Plant_Count__c == null) {
+                    garden.CAMPX__Capacity__c = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    public static void calculateCapacityAtUpdate(List <CAMPX__Garden__c> recentGardens, Map<Id, CAMPX__Garden__c> oldGardensMap) {
+        if (!recentGardens.isempty()) {
+            List<CAMPX__Garden__c> gardensToUpdate = new List<CAMPX__Garden__c>();
+            for (CAMPX__Garden__c currentGarden : recentGardens) {
+                    if (oldGardensMap.get(currentGarden.id) != null) {
+                        if ((currentGarden.CAMPX__Total_Plant_Count__c <> oldGardensMap.get(currentGarden.id).CAMPX__Total_Plant_Count__c)
+                        ||(currentGarden.CAMPX__Max_Plant_Count__c <> oldGardensMap.get(currentGarden.id).CAMPX__Max_Plant_Count__c)) {
+                            gardensToUpdate.add(currentGarden);
+                        }
+                    }
+            } calculateCapacityAtInsert(gardensToUpdate);
+        }
+    }
 }

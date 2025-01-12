@@ -127,4 +127,47 @@ private class GardenTriggerHandlerTest {
         createdGarden  = [SELECT id, CAMPX__Manager_Start_Date__c FROM CAMPX__Garden__c WHERE name = 'Garden One'];
         Assert.areEqual(null, gardenOne.CAMPX__Manager_Start_Date__c, 'Manager Start Date should be null');
     }
+
+    @istest
+    private static void calcultateGardenCapacityAtInsert() {
+        CAMPX__Garden__c randomGarden = new CAMPX__Garden__c (Name = 'Random Garden', CAMPX__Total_Plant_Count__c = 50, CAMPX__Max_Plant_Count__c = 100);
+        test.startTest();
+        insert randomGarden;
+        test.stopTest();
+        CAMPX__Garden__c insertedGarden = [SELECT CAMPX__Capacity__c FROM CAMPX__Garden__c WHERE Name = 'Random Garden'];
+        Assert.areEqual(50, insertedGarden.CAMPX__Capacity__c, 'Capacity should be equal to 50');
+    }
+    @istest
+    private static void calcultateZeroGardenCapacityAtInsert() {
+        CAMPX__Garden__c randomGarden = new CAMPX__Garden__c (Name = 'Random Garden', CAMPX__Total_Plant_Count__c = 0, CAMPX__Max_Plant_Count__c = 100);
+        test.startTest();
+        insert randomGarden;
+        test.stopTest();
+        CAMPX__Garden__c insertedGarden = [SELECT CAMPX__Capacity__c FROM CAMPX__Garden__c WHERE Name = 'Random Garden'];
+        Assert.areEqual(0, insertedGarden.CAMPX__Capacity__c, 'Capacity should be equal to 0');
+    }
+    @istest
+    private static void calcultateGardenCapacityAtUpdate() {
+        CAMPX__Garden__c randomGarden = new CAMPX__Garden__c (Name = 'Random Garden', CAMPX__Total_Plant_Count__c = 50, CAMPX__Max_Plant_Count__c = 100);
+        test.startTest();
+        insert randomGarden;
+        randomGarden.CAMPX__Total_Plant_Count__c = 60;
+        update randomGarden;
+        test.stopTest();
+        CAMPX__Garden__c insertedGarden = [SELECT CAMPX__Capacity__c FROM CAMPX__Garden__c WHERE Name = 'Random Garden'];
+        Assert.areEqual(60, insertedGarden.CAMPX__Capacity__c, 'Capacity should be equal to 60');
+    }
+    @istest
+    private static void calcultateNullGardenCapacityAtUpdate() {
+        CAMPX__Garden__c randomGarden = new CAMPX__Garden__c (Name = 'Random Garden', CAMPX__Total_Plant_Count__c = 50, CAMPX__Max_Plant_Count__c = 100);
+        test.startTest();
+        insert randomGarden;
+        randomGarden.CAMPX__Total_Plant_Count__c = null;
+        update randomGarden;
+        test.stopTest();
+        System.debug('Total plant count before update : '+ randomGarden.CAMPX__Total_Plant_Count__c);
+        CAMPX__Garden__c insertedGarden = [SELECT CAMPX__Capacity__c FROM CAMPX__Garden__c WHERE Name = 'Random Garden'];
+        Assert.areEqual(0, insertedGarden.CAMPX__Capacity__c, 'Capacity should be equal to 0');
+    }
+
 }
