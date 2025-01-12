@@ -151,13 +151,21 @@ public with sharing class GardenTriggerHandler {
         if (!recentGardens.isempty()) {
             List<CAMPX__Garden__c> gardensToUpdate = new List<CAMPX__Garden__c>();
             for (CAMPX__Garden__c currentGarden : recentGardens) {
-                    if (oldGardensMap.get(currentGarden.id) != null) {
-                        if ((currentGarden.CAMPX__Total_Plant_Count__c <> oldGardensMap.get(currentGarden.id).CAMPX__Total_Plant_Count__c)
+                if (oldGardensMap.get(currentGarden.id) != null) {
+                    if ((currentGarden.CAMPX__Total_Plant_Count__c <> oldGardensMap.get(currentGarden.id).CAMPX__Total_Plant_Count__c)
                         ||(currentGarden.CAMPX__Max_Plant_Count__c <> oldGardensMap.get(currentGarden.id).CAMPX__Max_Plant_Count__c)) {
-                            gardensToUpdate.add(currentGarden);
+                            if (currentGarden.CAMPX__Total_Plant_Count__c != null && currentGarden.CAMPX__Max_Plant_Count__c != null) {
+                                if (currentGarden.CAMPX__Total_Plant_Count__c > 0 && currentGarden.CAMPX__Max_Plant_Count__c > 0) {
+                                    currentGarden.CAMPX__Capacity__c = (currentGarden.CAMPX__Total_Plant_Count__c/currentGarden.CAMPX__Max_Plant_Count__c)*100;
+                                }
+                            }
+                        if (currentGarden.CAMPX__Total_Plant_Count__c <= 0 || currentGarden.CAMPX__Max_Plant_Count__c <= 0
+                        || currentGarden.CAMPX__Total_Plant_Count__c == null || currentGarden.CAMPX__Max_Plant_Count__c == null) {
+                            currentGarden.CAMPX__Capacity__c = 0;
                         }
                     }
-            } calculateCapacityAtInsert(gardensToUpdate);
+                }
+            }
         }
     }
 }
