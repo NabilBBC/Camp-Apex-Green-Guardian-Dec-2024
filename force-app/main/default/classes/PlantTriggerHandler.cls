@@ -1,5 +1,5 @@
 public with sharing class PlantTriggerHandler {
-    public static void InitializePlantFields(List<CAMPX__Plant__c> newPlants) {
+    public static void initializePlantFields(List<CAMPX__Plant__c> newPlants) {
         Set<Id> gardenIds = new Set<Id>();
         for (CAMPX__Plant__c plant : newPlants) {
             if (plant.CAMPX__Garden__c != null) {
@@ -107,4 +107,73 @@ public with sharing class PlantTriggerHandler {
             }
         }
     }
+
+    public static void aggregateTotalUnhealthyPlantsInTheGardenAtInsert(List<CAMPX__Plant__c> newPlants) {
+        Set<Id> gardensIds = new Set<Id>(); //Set to store parent garden ids of plants
+
+        if (!newPlants.isEmpty()) {
+            for (CAMPX__Plant__c plant : newPlants) {
+                if (plant.CAMPX__Garden__c != null) {
+                    gardensIds.add(plant.CAMPX__Garden__c); 
+                }
+            }
+        }
+        PlantTriggerHandler.getTheNumberOfUnhealthyPlants(gardensIds);
+    }
+
+    public static void aggregateTotalUnhealthyPlantsInTheGardenAtUpdate(List<CAMPX__Plant__c> newPlants, Map<Id,CAMPX__Plant__c> oldMapPlants) {
+        Set<Id> gardensIds = new Set<Id>(); //Set to store parent garden ids of plants
+        if (!newPlants.isEmpty()) {
+            System.debug('NBL*** : aggregateTotalUnhealthyPlantsInTheGardenAtUpdate trigger has records');
+            for (CAMPX__Plant__c plant : newPlants) {
+                //if the plant's garden or the plant's status have changed 
+                if (plant.CAMPX__Garden__c != oldMapPlants.get(plant.id).CAMPX__Garden__c || plant.CAMPX__Status__c != oldMapPlants.get(plant.id).CAMPX__Status__c) {
+                    System.debug('NBL*** Ancien statut de la plante : ' + oldMapPlants.get(plant.id).CAMPX__Status__c);
+                    System.debug('NBL*** Nouveau statut de la plante : ' + plant.CAMPX__Status__c);
+                    if (oldMapPlants.get(plant.id).CAMPX__Garden__c != null) {
+                        gardensIds.add(oldMapPlants.get(plant.id).CAMPX__Garden__c); 
+                    }
+                    if (plant.CAMPX__Garden__c != null) {
+                        gardensIds.add(plant.CAMPX__Garden__c);
+                        System.debug('NBL*** : records in gardensIds set : '+ gardensIds);
+                    }
+                }
+            }
+        }
+        System.debug('NBL*** : enter the  getTheNumberOfUnhealthyPlants method');
+        PlantTriggerHandler.getTheNumberOfUnhealthyPlants(gardensIds);
+    }
+
+    public static void aggregateTotalUnhealthyPlantsInTheGardenAtDelete(List<CAMPX__Plant__c> oldplants) {
+        Set<Id> gardensIds = new Set<Id>(); //Set to store parent garden ids of plants
+
+        if(!oldplants.isEmpty()){
+            for (CAMPX__Plant__c oldplant : oldplants) {
+                if (oldplant.CAMPX__Garden__c != null) {
+                    gardensIds.add(oldplant.CAMPX__Garden__c);
+                }
+            }
+        }
+        PlantTriggerHandler.getTheNumberOfUnhealthyPlants(gardensIds);
+    }
+
+    public static void getTheNumberOfUnhealthyPlants(Set<Id> gardensIds) {
+        if (!gardensIds.isEmpty()) {
+            System.debug('NBL*** : we are in the getTheNumberOfUnhealthyPlants method,  records in gardensIds set : '+ gardensIds);
+            List<Campx__Garden__c> gardensList = [SELECT id, CAMPX__Total_Unhealthy_Plant_Count__c, (SELECT id FROM CAMPX__Plants__r WHERE CAMPX__Status__c = 'Sick' OR CAMPX__Status__c = 'Deceased' OR CAMPX__Status__c = 'Wilting' ) FROM Campx__Garden__c WHERE id IN :gardensIds];
+            System.debug('NBL*** : records queried in the gardensList set : '+ gardensList);
+            List<Campx__Garden__c> listOfGardensToBeUpdated = new List<Campx__Garden__c>();
+            if (!gardensList.isEmpty()) {
+                for (Campx__Garden__c gardenToUpdate : gardensList) {
+                    gardenToUpdate.CAMPX__Total_Unhealthy_Plant_Count__c = gardenToUpdate.CAMPX__Plants__r.size();
+                    listOfGardensToBeUpdated.add(gardenToUpdate);
+                    System.debug('NBL*** : records in listOfGardensToBeUpdated : '+ listOfGardensToBeUpdated);
+                }
+            }
+            if (!listOfGardensToBeUpdated.isEmpty()) {
+                update listOfGardensToBeUpdated;
+            }
+        }
+    }
+
 }

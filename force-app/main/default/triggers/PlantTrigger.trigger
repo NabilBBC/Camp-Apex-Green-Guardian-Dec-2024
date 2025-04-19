@@ -4,11 +4,15 @@ trigger PlantTrigger on CAMPX__Plant__c (before insert, after delete, after inse
     }
     if (trigger.isAfter && (trigger.isInsert || trigger.isUndelete)){
         PlantTriggerHandler.aggregateTotalPlantCountAtInsert(trigger.new);
+        PlantTriggerHandler.aggregateTotalUnhealthyPlantsInTheGardenAtInsert(trigger.new);
     }
     if (trigger.isAfter && trigger.isUpdate){
         PlantTriggerHandler.aggregateTotalPlantCountAtUpdate(trigger.new, trigger.oldMap);
+        PlantTriggerHandler.aggregateTotalUnhealthyPlantsInTheGardenAtUpdate(trigger.new, trigger.oldMap);
     }
     if (trigger.isAfter && trigger.isDelete){
         PlantTriggerHandler.aggregateTotalPlantCountAtDelete(trigger.new, trigger.old);
+        PlantTriggerHandler.aggregateTotalUnhealthyPlantsInTheGardenAtDelete(trigger.old);
+
     }
 }

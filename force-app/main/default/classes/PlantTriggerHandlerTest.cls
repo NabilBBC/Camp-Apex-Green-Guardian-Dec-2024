@@ -159,4 +159,51 @@ private class PlantTriggerHandlerTest {
                                             ];
         Assert.areEqual(0, updatedGarden6.CAMPX__Total_Plant_Count__c, 'GardenSix should have 0 plant in total count');
     }
+
+    @isTest
+    static void insertUnhealthyPlantWithGarden() {
+        CAMPX__Garden__c gardenA = new CAMPX__Garden__c(Name = 'Jardin');
+        insert gardenA;
+
+        CAMPX__Plant__c unhealthyPlant = new CAMPX__Plant__c(Name = 'Plante Malade', CAMPX__Status__c = 'Sick' , CAMPX__Garden__c = gardenA.id);
+        insert unhealthyPlant;
+
+        CAMPX__Garden__c insertedGarden =   [
+                                            SELECT  id,
+                                                    CAMPX__Total_Unhealthy_Plant_Count__c
+                                            FROM    CAMPX__Garden__c
+                                            LIMIT   1
+                                            ];
+        Assert.areEqual(1, insertedGarden.CAMPX__Total_Unhealthy_Plant_Count__c, 'GardenA should have at least 1 unhealthy plant in total count');
+    }
+
+    @isTest
+    static void updateUnhealthyPlantWithGarden() {
+        CAMPX__Garden__c gardenA = new CAMPX__Garden__c(Name = 'Jardin');
+        insert gardenA;
+
+        CAMPX__Plant__c unhealthyPlant = new CAMPX__Plant__c(Name = 'Plante Malade', CAMPX__Status__c = 'Healthy' , CAMPX__Garden__c = gardenA.id);
+        insert unhealthyPlant;
+
+        CAMPX__Garden__c insertedGarden =   [
+                                            SELECT  id,
+                                                    CAMPX__Total_Unhealthy_Plant_Count__c
+                                            FROM    CAMPX__Garden__c
+                                            LIMIT   1
+                                            ];
+        
+        Assert.areEqual(0, insertedGarden.CAMPX__Total_Unhealthy_Plant_Count__c, 'GardenA should have at no unhealthy plant in total count');
+
+        unhealthyPlant.CAMPX__Status__c = 'Wilting';
+        update unhealthyPlant;
+
+        CAMPX__Garden__c updatedGarden =   [
+            SELECT  id,
+                    CAMPX__Total_Unhealthy_Plant_Count__c
+            FROM    CAMPX__Garden__c
+            LIMIT   1
+            ];
+
+        Assert.areEqual(1, updatedGarden.CAMPX__Total_Unhealthy_Plant_Count__c, 'GardenA should have at least 1 unhealthy plant in total count');
+    }
 }
