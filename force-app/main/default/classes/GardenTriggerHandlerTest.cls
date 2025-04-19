@@ -170,4 +170,22 @@ private class GardenTriggerHandlerTest {
         Assert.areEqual(0, insertedGarden.CAMPX__Capacity__c, 'Capacity should be equal to 0');
     }
 
+    @istest
+    private static void calculateGardenHealthIndex(){
+        List<CAMPX__Plant__c> listOfPlants = new List<CAMPX__Plant__c>();
+        CAMPX__Garden__c anyGarden = new CAMPX__Garden__c (Name = 'Any Garden', CAMPX__Max_Plant_Count__c = 100);
+        test.startTest();
+        insert anyGarden;
+        CAMPX__Plant__c healthyPlant = new CAMPX__Plant__c(Name = 'Healthy Plant', CAMPX__Status__c = 'Healthy', CAMPX__Garden__c = anyGarden.id);
+        listOfPlants.add(healthyPlant);
+        CAMPX__Plant__c unHealthyPlant = new CAMPX__Plant__c(Name = 'Unhealthy Plant', CAMPX__Status__c = 'Sick', CAMPX__Garden__c = anyGarden.id);
+        listOfPlants.add(unHealthyPlant);
+        insert listOfPlants;
+        test.stopTest();
+        CAMPX__Garden__c insertedAnyGarden = [SELECT CAMPX__Total_Plant_Count__c, CAMPX__Total_Unhealthy_Plant_Count__c, CAMPX__Health_Index__c FROM CAMPX__Garden__c WHERE Name = 'Any Garden' LIMIT 1];
+        System.debug('NBL*** Total Plant Count dans le jardin : ' + insertedAnyGarden.CAMPX__Total_Plant_Count__c);
+        System.debug('NBL*** Total unhealty Plants dans le jardin : ' + insertedAnyGarden.CAMPX__Total_Unhealthy_Plant_Count__c);
+        Assert.areEqual(50.00, insertedAnyGarden.CAMPX__Health_Index__c, 'Index should be 50.00');
+    }
+
 }

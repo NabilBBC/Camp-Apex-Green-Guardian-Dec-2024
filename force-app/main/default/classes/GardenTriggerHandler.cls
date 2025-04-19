@@ -168,4 +168,27 @@ public with sharing class GardenTriggerHandler {
             }
         }
     }
+
+
+    public static void calculateGardenHealthIndex(List <CAMPX__Garden__c> triggeredGardens, Map<Id, CAMPX__Garden__c> oldGardensMap) {
+        Set<CAMPX__Garden__c> gardensToBeUpdated = new Set<CAMPX__Garden__c>();
+//        Set<CAMPX__Plant__c> unhealthyPlantsSet = new Set<CAMPX__Plant__c>();
+        CAMPX__Garden__c oldGarden = new CAMPX__Garden__c();
+        if (!triggeredGardens.isempty()) {
+            for (CAMPX__Garden__c triggeredGarden : triggeredGardens) {
+                if (oldGardensMap.get(triggeredGarden.id) != null) {
+                    oldGarden = oldGardensMap.get(triggeredGarden.id);
+                }
+                if (triggeredGarden.CAMPX__Total_Plant_Count__c == 0 || triggeredGarden.CAMPX__Total_Plant_Count__c == null ) {
+                    triggeredGarden.CAMPX__Health_Index__c = 0;
+                }
+                if ((oldGarden.CAMPX__Total_Plant_Count__c != triggeredGarden.CAMPX__Total_Plant_Count__c)
+                    || (oldGarden.CAMPX__Total_Unhealthy_Plant_Count__c != triggeredGarden.CAMPX__Total_Unhealthy_Plant_Count__c)) {
+                    triggeredGarden.CAMPX__Health_Index__c = ((triggeredGarden.CAMPX__Total_Plant_Count__c - triggeredGarden.CAMPX__Total_Unhealthy_Plant_Count__c)
+                    / triggeredGarden.CAMPX__Total_Plant_Count__c * 100).setScale(2, System.RoundingMode.HALF_UP);
+                }
+            }                
+        }   
+    }
+
 }
