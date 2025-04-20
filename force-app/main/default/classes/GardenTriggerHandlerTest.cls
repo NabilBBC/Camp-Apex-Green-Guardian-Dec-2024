@@ -188,4 +188,32 @@ private class GardenTriggerHandlerTest {
         Assert.areEqual(50.00, insertedAnyGarden.CAMPX__Health_Index__c, 'Index should be 50.00');
     }
 
+    @isTest
+    static void testUpdateGardenStatus() {
+        // Create gardens with different scenarios
+        List<CAMPX__Garden__c> gardens = new List<CAMPX__Garden__c>{
+            new CAMPX__Garden__c(Name='Closed', CAMPX__Status__c='Permanent Closure', CAMPX__Capacity__c=50),
+            new CAMPX__Garden__c(Name='ZeroCap', CAMPX__Capacity__c=0),
+            new CAMPX__Garden__c(Name='OverCap', CAMPX__Capacity__c=150),
+            new CAMPX__Garden__c(Name='Operational', CAMPX__Capacity__c=80, CAMPX__Total_Plant_Count__c=100, CAMPX__Minimum_Plant_Count__c=50, CAMPX__Health_Index__c=80),
+            new CAMPX__Garden__c(Name='Awaiting', CAMPX__Capacity__c=60, CAMPX__Total_Plant_Count__c=40, CAMPX__Minimum_Plant_Count__c=50, CAMPX__Health_Index__c=60),
+            new CAMPX__Garden__c(Name='Awaiting Health Index', CAMPX__Capacity__c=75, CAMPX__Total_Plant_Count__c=40, CAMPX__Minimum_Plant_Count__c=50, CAMPX__Health_Index__c=60),
+            new CAMPX__Garden__c(Name='Awaiting Total Plant', CAMPX__Capacity__c=75, CAMPX__Total_Plant_Count__c=40, CAMPX__Minimum_Plant_Count__c=50, CAMPX__Health_Index__c=75)
+        };
+        insert gardens;
+
+        // Call the method
+        Test.startTest();
+        GardenTriggerHandler.updateGardenStatus(gardens);
+        Test.stopTest();
+
+        // Assert expected statuses
+        System.assertEquals('Permanent Closure', gardens[0].CAMPX__Status__c, 'Should remain Permanent Closure');
+        System.assertEquals('Temporary Closure', gardens[1].CAMPX__Status__c, 'Should be Temporary Closure');
+        System.assertEquals('Over Capacity', gardens[2].CAMPX__Status__c, 'Should be Over Capacity');
+        System.assertEquals('Operational', gardens[3].CAMPX__Status__c, 'Should be Operational');
+        System.assertEquals('Awaiting Resources', gardens[4].CAMPX__Status__c, 'Should be Awaiting Resources');
+        System.assertEquals('Awaiting Resources', gardens[5].CAMPX__Status__c, 'Should be Awaiting Health Index');
+        System.assertEquals('Awaiting Resources', gardens[6].CAMPX__Status__c, 'Should be Awaiting Total Plant');
+    }
 }

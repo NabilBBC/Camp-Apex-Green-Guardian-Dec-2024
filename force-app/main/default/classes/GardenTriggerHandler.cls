@@ -147,32 +147,32 @@ public with sharing class GardenTriggerHandler {
         }
     }
 
-    public static void calculateCapacityAtUpdate(List <CAMPX__Garden__c> recentGardens, Map<Id, CAMPX__Garden__c> oldGardensMap) {
-        if (!recentGardens.isempty()) {
-            List<CAMPX__Garden__c> gardensToUpdate = new List<CAMPX__Garden__c>();
-            for (CAMPX__Garden__c currentGarden : recentGardens) {
-                if (oldGardensMap.get(currentGarden.id) != null) {
-                    if ((currentGarden.CAMPX__Total_Plant_Count__c <> oldGardensMap.get(currentGarden.id).CAMPX__Total_Plant_Count__c)
-                        ||(currentGarden.CAMPX__Max_Plant_Count__c <> oldGardensMap.get(currentGarden.id).CAMPX__Max_Plant_Count__c)) {
-                            if (currentGarden.CAMPX__Total_Plant_Count__c != null && currentGarden.CAMPX__Max_Plant_Count__c != null) {
-                                if (currentGarden.CAMPX__Total_Plant_Count__c > 0 && currentGarden.CAMPX__Max_Plant_Count__c > 0) {
-                                    currentGarden.CAMPX__Capacity__c = (currentGarden.CAMPX__Total_Plant_Count__c/currentGarden.CAMPX__Max_Plant_Count__c)*100;
-                                }
-                            }
-                        if (currentGarden.CAMPX__Total_Plant_Count__c <= 0 || currentGarden.CAMPX__Max_Plant_Count__c <= 0
-                        || currentGarden.CAMPX__Total_Plant_Count__c == null || currentGarden.CAMPX__Max_Plant_Count__c == null) {
-                            currentGarden.CAMPX__Capacity__c = 0;
-                        }
-                    }
+    public static void calculateCapacityAtUpdate(List<CAMPX__Garden__c> recentGardens, Map<Id, CAMPX__Garden__c> oldGardensMap) {
+        if (recentGardens.isEmpty()) return;
+    
+        for (CAMPX__Garden__c currentGarden : recentGardens) {
+            CAMPX__Garden__c oldGarden = oldGardensMap.get(currentGarden.Id);
+            if (oldGarden == null) continue;
+    
+            // Only process if either count has changed
+            if (currentGarden.CAMPX__Total_Plant_Count__c != oldGarden.CAMPX__Total_Plant_Count__c
+                || currentGarden.CAMPX__Max_Plant_Count__c != oldGarden.CAMPX__Max_Plant_Count__c) {
+                
+                // Set capacity to 0 if either value is null or <= 0
+                if (currentGarden.CAMPX__Total_Plant_Count__c == null 
+                    || currentGarden.CAMPX__Max_Plant_Count__c == null
+                    || currentGarden.CAMPX__Total_Plant_Count__c <= 0 
+                    || currentGarden.CAMPX__Max_Plant_Count__c <= 0) {
+                    currentGarden.CAMPX__Capacity__c = 0;
+                } else {
+                    // Calculate capacity only if both values are positive
+                    currentGarden.CAMPX__Capacity__c = (currentGarden.CAMPX__Total_Plant_Count__c / currentGarden.CAMPX__Max_Plant_Count__c) * 100;
                 }
             }
         }
     }
 
-
     public static void calculateGardenHealthIndex(List <CAMPX__Garden__c> triggeredGardens, Map<Id, CAMPX__Garden__c> oldGardensMap) {
-        Set<CAMPX__Garden__c> gardensToBeUpdated = new Set<CAMPX__Garden__c>();
-//        Set<CAMPX__Plant__c> unhealthyPlantsSet = new Set<CAMPX__Plant__c>();
         CAMPX__Garden__c oldGarden = new CAMPX__Garden__c();
         if (!triggeredGardens.isempty()) {
             for (CAMPX__Garden__c triggeredGarden : triggeredGardens) {
@@ -184,11 +184,42 @@ public with sharing class GardenTriggerHandler {
                 }
                 if ((oldGarden.CAMPX__Total_Plant_Count__c != triggeredGarden.CAMPX__Total_Plant_Count__c)
                     || (oldGarden.CAMPX__Total_Unhealthy_Plant_Count__c != triggeredGarden.CAMPX__Total_Unhealthy_Plant_Count__c)) {
-                    triggeredGarden.CAMPX__Health_Index__c = ((triggeredGarden.CAMPX__Total_Plant_Count__c - triggeredGarden.CAMPX__Total_Unhealthy_Plant_Count__c)
-                    / triggeredGarden.CAMPX__Total_Plant_Count__c * 100).setScale(2, System.RoundingMode.HALF_UP);
+                    if (triggeredGarden.CAMPX__Total_Plant_Count__c > 0) {
+                        triggeredGarden.CAMPX__Health_Index__c = ((triggeredGarden.CAMPX__Total_Plant_Count__c - triggeredGarden.CAMPX__Total_Unhealthy_Plant_Count__c)
+                        / triggeredGarden.CAMPX__Total_Plant_Count__c * 100).setScale(2, System.RoundingMode.HALF_UP);
+                    } 
                 }
             }                
         }   
+    } 
+
+    public static void updateGardenStatus(List <CAMPX__Garden__c> triggeringGardens) {
+        if (!triggeringGardens.isempty()) {
+            for (CAMPX__Garden__c garden : triggeringGardens) {
+                if (garden.CAMPX__Status__c == 'Permanent Closure'){
+                    continue;
+                }
+                if (garden.CAMPX__Capacity__c == 0) {
+                    garden.CAMPX__Status__c = 'Temporary Closure';
+                    continue;
+                }
+                if (garden.CAMPX__Capacity__c > 100) {
+                    garden.CAMPX__Status__c = 'Over Capacity';
+                    continue;
+                }                    
+                if ((garden.CAMPX__Capacity__c >= 70 && garden.CAMPX__Capacity__c <= 100)
+                    &&(garden.CAMPX__Total_Plant_Count__c >= garden.CAMPX__Minimum_Plant_Count__c)
+                    && garden.CAMPX__Health_Index__c >= 70){
+                    garden.CAMPX__Status__c = 'Operational';
+                    continue;
+                }
+                if ((garden.CAMPX__Capacity__c > 0 && garden.CAMPX__Capacity__c < 70)
+                || garden.CAMPX__Health_Index__c < 70
+                || garden.CAMPX__Total_Plant_Count__c < garden.CAMPX__Minimum_Plant_Count__c){
+                garden.CAMPX__Status__c = 'Awaiting Resources';
+                }
+            }
+        }
     }
 
 }
