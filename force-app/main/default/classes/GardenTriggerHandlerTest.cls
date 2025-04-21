@@ -379,4 +379,53 @@ private static void testAvoidNegativeValuesUpdate() {
         }
         Test.stopTest();
     }
+
+    @isTest
+    private static void testInRangeValuesForMinMaxPlantCount() {
+        // Test 1: Min > Max should throw error
+        CAMPX__Garden__c garden1 = new CAMPX__Garden__c(
+            Name = 'Invalid Garden',
+            CAMPX__Minimum_Plant_Count__c = 100,
+            CAMPX__Max_Plant_Count__c = 50
+        );
+        
+        Test.startTest();
+        try {
+            insert garden1;
+            Assert.fail('Should have thrown error for min > max');
+        } catch(DmlException e) {
+            Assert.isTrue(e.getMessage().contains('The Maximum Plant Count must be greater than or equal to the Minimum Plant Count'));
+        }
+
+        // Test 2: Min = Max should succeed
+        CAMPX__Garden__c garden2 = new CAMPX__Garden__c(
+            Name = 'Valid Garden Equal',
+            CAMPX__Minimum_Plant_Count__c = 50,
+            CAMPX__Max_Plant_Count__c = 50
+        );
+        
+        try {
+            insert garden2;
+            CAMPX__Garden__c inserted = [SELECT Id FROM CAMPX__Garden__c WHERE Name = 'Valid Garden Equal'];
+            Assert.isNotNull(inserted);
+        } catch(Exception e) {
+            Assert.fail('Should not throw error when min = max');
+        }
+
+        // Test 3: Min < Max should succeed
+        CAMPX__Garden__c garden3 = new CAMPX__Garden__c(
+            Name = 'Valid Garden Less',
+            CAMPX__Minimum_Plant_Count__c = 25,
+            CAMPX__Max_Plant_Count__c = 50
+        );
+        
+        try {
+            insert garden3;
+            CAMPX__Garden__c inserted = [SELECT Id FROM CAMPX__Garden__c WHERE Name = 'Valid Garden Less'];
+            Assert.isNotNull(inserted);
+        } catch(Exception e) {
+            Assert.fail('Should not throw error when min < max');
+        }
+        Test.stopTest();
+    }
 }

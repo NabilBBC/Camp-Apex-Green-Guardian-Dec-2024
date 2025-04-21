@@ -6,6 +6,7 @@ trigger GardenTrigger on CAMPX__Garden__c (before insert, after insert, before u
         GardenTriggerHandler.updateGardenStatus(trigger.new);
         GardenTriggerHandler.avoidNegativeValues(trigger.new);
         GardenTriggerHandler.avoidNullValuesInMinMaxPlantCount(trigger.new);
+        GardenTriggerHandler.inRangeValuesforMinMaxPlantCount(trigger.new);
     }
     if (trigger.isBefore && trigger.isUpdate) {
         GardenTriggerHandler.createTaskUponGardenUpdate(trigger.new, trigger.oldmap);
@@ -18,6 +19,8 @@ trigger GardenTrigger on CAMPX__Garden__c (before insert, after insert, before u
         GardenTriggerHandler.updateGardenStatus(trigger.new);
         GardenTriggerHandler.avoidNegativeValues(trigger.new);
         GardenTriggerHandler.avoidNullValuesInMinMaxPlantCount(trigger.new);
+        GardenTriggerHandler.inRangeValuesforMinMaxPlantCount(trigger.new);
+
     }
     if (trigger.isAfter && trigger.isInsert) {
         GardenTriggerHandler.createTaskUponGardenCreation(trigger.new);

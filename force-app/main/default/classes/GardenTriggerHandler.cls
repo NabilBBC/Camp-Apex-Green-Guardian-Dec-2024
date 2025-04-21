@@ -246,4 +246,17 @@ public with sharing class GardenTriggerHandler {
             }
         }
     }
-} 
+
+    public static void inRangeValuesforMinMaxPlantCount(List <CAMPX__Garden__c> triggeringGardens) {
+        if (triggeringGardens.isEmpty()) return;{
+        }
+        for (CAMPX__Garden__c triggGarden : triggeringGardens) {
+            if (triggGarden.CAMPX__Minimum_Plant_Count__c == null || triggGarden.CAMPX__Max_Plant_Count__c == null){
+                continue;
+            }
+            if (!(triggGarden.CAMPX__Max_Plant_Count__c >= triggGarden.CAMPX__Minimum_Plant_Count__c)) {
+            triggGarden.addError('The Maximum Plant Count must be greater than or equal to the Minimum Plant Count');
+            }
+        }
+    }
+}
