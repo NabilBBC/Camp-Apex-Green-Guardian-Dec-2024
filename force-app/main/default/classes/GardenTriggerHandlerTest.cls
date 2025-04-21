@@ -216,4 +216,167 @@ private class GardenTriggerHandlerTest {
         System.assertEquals('Awaiting Resources', gardens[5].CAMPX__Status__c, 'Should be Awaiting Health Index');
         System.assertEquals('Awaiting Resources', gardens[6].CAMPX__Status__c, 'Should be Awaiting Total Plant');
     }
+    @isTest
+    private static void testAvoidNegativeValuesInsert() {
+        // Test data
+        List<CAMPX__Garden__c> gardens = new List<CAMPX__Garden__c>{
+            new CAMPX__Garden__c(
+                Name = 'Negative Min Count',
+                CAMPX__Minimum_Plant_Count__c = -1
+            ),
+            new CAMPX__Garden__c(
+                Name = 'Negative Max Count',
+                CAMPX__Max_Plant_Count__c = -5
+            ),
+            new CAMPX__Garden__c(
+                Name = 'Negative Total Count',
+                CAMPX__Total_Plant_Count__c = -10
+            ),
+            new CAMPX__Garden__c(
+                Name = 'Negative Unhealthy Count',
+                CAMPX__Total_Unhealthy_Plant_Count__c = -3
+            )
+        };
+        
+        // Test insert with negative values
+        Test.startTest();
+        try {
+            insert gardens;
+            System.assert(false, 'Should have thrown an exception');
+        } catch (DmlException e) {
+            // Verify error message
+            System.assert(e.getMessage().contains('CAMPX__Plant_Count__c fields must be greater than or equal to zero'), 
+                'Expected error message for negative plant count values');
+        }
+        Test.stopTest();
+    }
+
+@isTest
+private static void testAvoidNegativeValuesUpdate() {
+    // Create garden with valid values
+    CAMPX__Garden__c garden = new CAMPX__Garden__c(
+        Name = 'Test Garden',
+        CAMPX__Minimum_Plant_Count__c = 1,
+        CAMPX__Max_Plant_Count__c = 100,
+        CAMPX__Total_Plant_Count__c = 0,
+        CAMPX__Total_Unhealthy_Plant_Count__c = 0
+    );
+    insert garden;
+    
+    // Test different negative value scenarios
+    Map<String, Decimal> fieldTests = new Map<String, Decimal>{
+        'CAMPX__Minimum_Plant_Count__c' => -1,
+        'CAMPX__Max_Plant_Count__c' => -5,
+        'CAMPX__Total_Plant_Count__c' => -10,
+        'CAMPX__Total_Unhealthy_Plant_Count__c' => -3
+    };
+
+    Test.startTest();
+    for(String fieldName : fieldTests.keySet()) {
+        try {
+            // Reset garden to valid values
+            garden = [SELECT Id, Name, CAMPX__Minimum_Plant_Count__c, CAMPX__Max_Plant_Count__c, 
+                     CAMPX__Total_Plant_Count__c, CAMPX__Total_Unhealthy_Plant_Count__c 
+                     FROM CAMPX__Garden__c WHERE Id = :garden.Id];
+            
+            // Set negative value for current field
+            garden.put(fieldName, fieldTests.get(fieldName));
+            update garden;
+            
+            Assert.fail('Expected exception for negative value in ' + fieldName + ' was not thrown');
+        } catch (DmlException e) {
+            // Verify error message
+            Assert.isTrue(
+                e.getMessage().contains('Plant Count fields must be greater than or equal to zero'),
+                'Wrong error message for ' + fieldName + ': ' + e.getMessage()
+            );
+        }
+    }
+    Test.stopTest();
+
+    // Verify garden still has original valid values
+    CAMPX__Garden__c finalGarden = [SELECT CAMPX__Minimum_Plant_Count__c, CAMPX__Max_Plant_Count__c,
+                                   CAMPX__Total_Plant_Count__c, CAMPX__Total_Unhealthy_Plant_Count__c
+                                   FROM CAMPX__Garden__c WHERE Id = :garden.Id];
+    
+    Assert.areEqual(1, finalGarden.CAMPX__Minimum_Plant_Count__c, 'Minimum Plant Count should remain 1');
+    Assert.areEqual(100, finalGarden.CAMPX__Max_Plant_Count__c, 'Max Plant Count should remain 100');
+    Assert.areEqual(0, finalGarden.CAMPX__Total_Plant_Count__c, 'Total Plant Count should remain 0');
+    Assert.areEqual(0, finalGarden.CAMPX__Total_Unhealthy_Plant_Count__c, 'Unhealthy Plant Count should remain 0');
+}
+
+    @isTest
+    private static void testValidPositiveValues() {
+        // Test data with valid positive values
+        CAMPX__Garden__c garden = new CAMPX__Garden__c(
+            Name = 'Valid Garden',
+            CAMPX__Minimum_Plant_Count__c = 1,
+            CAMPX__Max_Plant_Count__c = 100,
+            CAMPX__Total_Plant_Count__c = 50,
+            CAMPX__Total_Unhealthy_Plant_Count__c = 5
+        );
+        
+        Test.startTest();
+        try {
+            insert garden;
+            // Query to verify the insert was successful
+            CAMPX__Garden__c insertedGarden = [
+                SELECT Id, CAMPX__Minimum_Plant_Count__c, CAMPX__Max_Plant_Count__c,
+                    CAMPX__Total_Plant_Count__c, CAMPX__Total_Unhealthy_Plant_Count__c
+                FROM CAMPX__Garden__c
+                WHERE Id = :garden.Id
+            ];
+            
+            // Verify all values were inserted correctly
+            System.assertEquals(1, insertedGarden.CAMPX__Minimum_Plant_Count__c);
+            System.assertEquals(100, insertedGarden.CAMPX__Max_Plant_Count__c);
+            System.assertEquals(50, insertedGarden.CAMPX__Total_Plant_Count__c);
+            System.assertEquals(5, insertedGarden.CAMPX__Total_Unhealthy_Plant_Count__c);
+        } catch (Exception e) {
+            System.assert(false, 'Should not have thrown an exception: ' + e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    private static void testAvoidNullValuesInMinMaxPlantCount() {
+        // Create garden with valid values
+        CAMPX__Garden__c garden = new CAMPX__Garden__c(
+            Name = 'Test Garden',
+            CAMPX__Minimum_Plant_Count__c = 1,
+            CAMPX__Max_Plant_Count__c = 100,
+            CAMPX__Total_Plant_Count__c = 50,
+            CAMPX__Total_Unhealthy_Plant_Count__c = 0
+        );
+        insert garden;
+        
+        // Test different value scenarios
+        Map<String, Decimal> fieldTests = new Map<String, Decimal>{
+            'CAMPX__Minimum_Plant_Count__c' => null,
+            'CAMPX__Max_Plant_Count__c' => null
+        };
+    
+        Test.startTest();
+        for(String fieldName : fieldTests.keySet()) {
+            try {
+                // Reset garden to valid values
+                garden = [SELECT Id, Name, CAMPX__Minimum_Plant_Count__c, CAMPX__Max_Plant_Count__c, 
+                         CAMPX__Total_Plant_Count__c, CAMPX__Total_Unhealthy_Plant_Count__c 
+                         FROM CAMPX__Garden__c WHERE Id = :garden.Id];
+                
+                // Set null value for current field
+                garden.put(fieldName, fieldTests.get(fieldName));
+                update garden;
+                
+                Assert.fail('Expected exception for negative value in ' + fieldName + ' was not thrown');
+            } catch (DmlException e) {
+                // Verify error message
+                Assert.isTrue(
+                    e.getMessage().contains('Maximum and Minimum Plant Count fields cannot be blank when there are plants in the Garden.'),
+                    'Wrong error message for ' + fieldName + ': ' + e.getMessage()
+                );
+            }
+        }
+        Test.stopTest();
+    }
 }

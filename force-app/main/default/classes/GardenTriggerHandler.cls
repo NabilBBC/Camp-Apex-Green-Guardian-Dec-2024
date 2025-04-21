@@ -222,4 +222,28 @@ public with sharing class GardenTriggerHandler {
         }
     }
 
-}
+    public static void avoidNegativeValues(List <CAMPX__Garden__c> triggeringGardens) {
+        if (triggeringGardens.isEmpty()) return;{
+        }
+        for (CAMPX__Garden__c triggGarden : triggeringGardens) {
+            if (triggGarden.CAMPX__Total_Plant_Count__c < 0
+                || triggGarden.CAMPX__Max_Plant_Count__c < 0
+                || triggGarden.CAMPX__Total_Plant_Count__c < 0
+                || triggGarden.CAMPX__Total_Unhealthy_Plant_Count__c < 0) {
+            triggGarden.addError('Plant Count fields must be greater than or equal to zero.');
+            }
+        }
+    }
+
+    public static void avoidNullValuesInMinMaxPlantCount(List <CAMPX__Garden__c> triggeringGardens) {
+        if (triggeringGardens.isEmpty()) return;{
+        }
+        for (CAMPX__Garden__c triggGarden : triggeringGardens) {
+            if (triggGarden.CAMPX__Total_Plant_Count__c != null && triggGarden.CAMPX__Total_Plant_Count__c > 0){
+                if (triggGarden.CAMPX__Minimum_Plant_Count__c == null || triggGarden.CAMPX__Max_Plant_Count__c == null) {
+                    triggGarden.addError('Maximum and Minimum Plant Count fields cannot be blank when there are plants in the Garden.');
+                }
+            }
+        }
+    }
+} 
